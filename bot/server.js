@@ -12,6 +12,7 @@ const express = require('express');
 const TelegramBot = require('node-telegram-bot-api');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 
 // ─── Config ──────────────────────────────────────────────────────────────
 const BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -28,7 +29,6 @@ app.use(cors());
 app.use(express.json());
 // Serve static files if dist exists
 const distPath = path.join(__dirname, '../dist');
-const fs = require('fs');
 if (fs.existsSync(distPath)) {
   app.use(express.static(distPath));
 }
