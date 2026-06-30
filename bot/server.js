@@ -34,8 +34,26 @@ if (fs.existsSync(distPath)) {
 }
 
 // ─── Bot ─────────────────────────────────────────────────────────────────
-const bot = new TelegramBot(BOT_TOKEN, { polling: true });
-console.log('🤖 Bot started...');
+let bot;
+try {
+  bot = new TelegramBot(BOT_TOKEN, { polling: { timeout: 10, limit: 100 } });
+  console.log('🤖 Bot started...');
+} catch (err) {
+  console.error('❌ Failed to start bot:', err.message);
+  process.exit(1);
+}
+
+// Handle polling errors gracefully
+bot.on('polling_error', (err) => {
+  console.error('⚠️ Polling error:', err.code);
+  if (err.code === 'ETELEGRAM' && err.message.includes('409')) {
+    console.log('⚠️ Another bot instance is running. Retrying in 5s...');
+    setTimeout(() => {
+      bot.stopPolling();
+      bot.startPolling();
+    }, 5000);
+  }
+});
 
 // ─── Data Stores ─────────────────────────────────────────────────────────
 const users = new Map();
