@@ -36,23 +36,34 @@ if (fs.existsSync(distPath)) {
 // ─── Bot ─────────────────────────────────────────────────────────────────
 let bot;
 try {
-  bot = new TelegramBot(BOT_TOKEN, { polling: { timeout: 10, limit: 100 } });
-  console.log('🤖 Bot started...');
+  bot = new TelegramBot(BOT_TOKEN, { polling: false });
+  console.log('🤖 Bot created (webhook mode)...');
 } catch (err) {
-  console.error('❌ Failed to start bot:', err.message);
-  process.exit(1);
+  console.error('❌ Failed to create bot:', err.message);
+  // Don't exit - let server run for health checks
 }
 
-// Handle polling errors gracefully
-bot.on('polling_error', (err) => {
-  console.error('⚠️ Polling error:', err.code);
-  if (err.code === 'ETELEGRAM' && err.message.includes('409')) {
-    console.log('⚠️ Another bot instance is running. Retrying in 5s...');
-    setTimeout(() => {
-      bot.stopPolling();
-      bot.startPolling();
-    }, 5000);
+// Set webhook if bot is available
+if (bot && WEBAPP_URL && !WEBAPP_URL.includes('localhost')) {
+  const webhookUrl = `${WEBAPP_URL}/webhook`;
+  bot.setWebHook(webhookUrl)
+    .then(() => console.log(`🔗 Webhook set: ${webhookUrl}`))
+    .catch(err => console.error('⚠️ Webhook error:', err.message));
+} else if (bot) {
+  // Fallback to polling for local dev
+  try {
+    bot.startPolling();
+    console.log('🔄 Polling started...');
+  } catch (err) {
+    console.error('⚠️ Polling error:', err.message);
   }
+}
+
+// Webhook endpoint
+app.post('/webhook', (req, res) => {
+  if (!bot) return res.sendStatus(503);
+  bot.processUpdate(req.body);
+  res.sendStatus(200);
 });
 
 // ─── Data Stores ─────────────────────────────────────────────────────────
