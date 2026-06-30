@@ -26,7 +26,12 @@ if (!ADMIN_IDS.length) console.warn('⚠️  ADMIN_IDS not set — admin panel d
 const app = express();
 app.use(cors());
 app.use(express.json());
-app.use(express.static(path.join(__dirname, '../dist')));
+// Serve static files if dist exists
+const distPath = path.join(__dirname, '../dist');
+const fs = require('fs');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+}
 
 // ─── Bot ─────────────────────────────────────────────────────────────────
 const bot = new TelegramBot(BOT_TOKEN, { polling: true });
@@ -622,9 +627,14 @@ bot.on('successful_payment', async (msg) => {
   } catch (e) {}
 });
 
-// ─── Serve Mini App ──────────────────────────────────────────────────────
+// ─── Serve Mini App (if dist exists) ────────────────────────────────────
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist/index.html'));
+  const indexPath = path.join(__dirname, '../dist/index.html');
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    res.json({ status: 'ok', message: 'Casino Bot API is running', webapp: WEBAPP_URL });
+  }
 });
 
 // ─── Auto-start arena every 10 minutes ──────────────────────────────────
