@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Админ-панель Casino Bot</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    :root { --bg:#1a1a2e; --card:#16213e; --input:#0f3460; --accent:#e94560; --accent2:#ff6b81; --text:#eee; --muted:#aaa; --green:#2ecc71; --orange:#f39c12; --red:#e74c3c; --border:#2a2a4a; }
+    body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+    .login-box { display:flex; justify-content:center; align-items:center; min-height:100vh; padding:20px; }
+    .login-form { background:var(--card); padding:40px; border-radius:16px; width:100%; max-width:400px; box-shadow:0 10px 40px rgba(0,0,0,.3); }
+    .login-form h1 { text-align:center; margin-bottom:8px; }
+    .login-form p { text-align:center; color:var(--muted); margin-bottom:30px; }
+    .fg { margin-bottom:20px; }
+    .fg label { display:block; margin-bottom:8px; font-weight:500; }
+    .fg input,.fg textarea,.fg select { width:100%; padding:12px 16px; background:var(--input); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:16px; }
+    .fg input:focus,.fg textarea:focus { outline:none; border-color:var(--accent); }
+    .fg textarea { min-height:100px; resize:vertical; }
+    .btn { display:inline-block; padding:12px 24px; border:none; border-radius:8px; font-size:16px; font-weight:600; cursor:pointer; transition:all .2s; }
+    .btn-primary { background:var(--accent); color:#fff; width:100%; }
+    .btn-primary:hover { background:var(--accent2); }
+    .btn-success { background:var(--green); color:#fff; }
+    .btn-warning { background:var(--orange); color:#fff; }
+    .btn-danger { background:var(--red); color:#fff; }
+    .btn-sm { padding:8px 16px; font-size:14px; }
+    #dash { display:none; }
+    .hdr { background:var(--card); padding:16px 24px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid var(--border); position:sticky; top:0; z-index:100; }
+    .nav { display:flex; gap:8px; padding:16px 24px; background:var(--card); border-bottom:1px solid var(--border); overflow-x:auto; }
+    .nav button { padding:10px 20px; background:var(--input); border:1px solid var(--border); border-radius:8px; color:var(--text); cursor:pointer; white-space:nowrap; }
+    .nav button:hover,.nav button.on { background:var(--accent); border-color:var(--accent); }
+    .content { padding:24px; max-width:1200px; margin:0 auto; }
+    .sec { display:none; } .sec.on { display:block; }
+    .sg { display:grid; grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); gap:16px; margin-bottom:24px; }
+    .sc { background:var(--card); padding:24px; border-radius:12px; text-align:center; border:1px solid var(--border); }
+    .sc .v { font-size:32px; font-weight:700; color:var(--accent); }
+    .sc .l { color:var(--muted); margin-top:8px; }
+    .card { background:var(--card); border-radius:12px; padding:24px; margin-bottom:16px; border:1px solid var(--border); }
+    .card h3 { margin-bottom:16px; }
+    table { width:100%; border-collapse:collapse; }
+    th,td { padding:12px 16px; text-align:left; border-bottom:1px solid var(--border); }
+    th { background:var(--input); font-weight:600; }
+    .badge { display:inline-block; padding:4px 10px; border-radius:12px; font-size:12px; font-weight:600; }
+    .bg { background:rgba(46,204,113,.2); color:var(--green); }
+    .br { background:rgba(231,76,60,.2); color:var(--red); }
+    .acts { display:flex; gap:8px; flex-wrap:wrap; }
+    .modal { display:none; position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,.7); justify-content:center; align-items:center; z-index:200; padding:20px; }
+    .modal.on { display:flex; }
+    .mc { background:var(--card); border-radius:12px; padding:24px; width:100%; max-width:500px; max-height:90vh; overflow-y:auto; }
+    .mh { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .mx { background:none; border:none; color:var(--muted); font-size:24px; cursor:pointer; }
+    .toast { position:fixed; bottom:24px; right:24px; background:var(--green); color:#fff; padding:16px 24px; border-radius:8px; font-weight:500; z-index:300; animation:si .3s ease; }
+    .toast.err { background:var(--red); }
+    @keyframes si { from{transform:translateY(100px);opacity:0} to{transform:translateY(0);opacity:1} }
+    .search { display:flex; gap:12px; margin-bottom:16px; }
+    .search input { flex:1; padding:12px 16px; background:var(--input); border:1px solid var(--border); border-radius:8px; color:var(--text); font-size:16px; }
+    .empty { text-align:center; padding:48px; color:var(--muted); }
+    @media(max-width:768px){ .content{padding:16px} .sg{grid-template-columns:repeat(2,1fr)} .sc .v{font-size:24px} }
+  </style>
+</head>
+<body>
+  <div id="loginPage" class="login-box">
+    <div class="login-form">
+      <h1>&#127920;</h1>
+      <h1>Админ-панель</h1>
+      <p>Casino Bot Management</p>
+      <div class="fg">
+        <label>Пароль админа</label>
+        <input type="password" id="pw" placeholder="Введите пароль" onkeypress="if(event.key==='Enter')doLogin()">
+      </div>
+      <button class="btn btn-primary" onclick="doLogin()">Войти</button>
+    </div>
+  </div>
+
+  <div id="dash">
+    <div class="hdr">
+      <h2>&#127920; Casino Admin</h2>
+      <button class="btn btn-danger btn-sm" onclick="doLogout()">Выйти</button>
+    </div>
+    <div class="nav">
+      <button class="on" onclick="show('stats',this)">&#128202; Статистика</button>
+      <button onclick="show('users',this)">&#128101; Пользователи</button>
+      <button onclick="show('promos',this)">&#127915; Промокоды</button>
+      <button onclick="show('broadcast',this)">&#128226; Рассылка</button>
+    </div>
+    <div class="content">
+      <div id="stats" class="sec on">
+        <div class="sg">
+          <div class="sc"><div class="v" id="s1">0</div><div class="l">Пользователей</div></div>
+          <div class="sc"><div class="v" id="s2">0</div><div class="l">Всего игр</div></div>
+          <div class="sc"><div class="v" id="s3">0</div><div class="l">Всего ставок</div></div>
+          <div class="sc"><div class="v" id="s4">0</div><div class="l">Всего выигрышей</div></div>
+          <div class="sc"><div class="v" id="s5">0</div><div class="l">Профит</div></div>
+          <div class="sc"><div class="v" id="s6">0</div><div class="l">Забанено</div></div>
+        </div>
+      </div>
+
+      <div id="users" class="sec">
+        <div class="search">
+          <input type="text" id="us" placeholder="Поиск по ID или имени..." oninput="filterU()">
+          <button class="btn btn-primary btn-sm" onclick="loadU()">&#128260;</button>
+        </div>
+        <div class="card">
+          <table><thead><tr><th>ID</th><th>Имя</th><th>Баланс</th><th>Игр</th><th>Статус</th><th>Действия</th></tr></thead>
+          <tbody id="ut"></tbody></table>
+          <div id="ue" class="empty" style="display:none">Пока нет пользователей</div>
+        </div>
+      </div>
+
+      <div id="promos" class="sec">
+        <div style="margin-bottom:16px"><button class="btn btn-success btn-sm" onclick="document.getElementById('cpm').classList.add('on')">+ Создать промокод</button></div>
+        <div class="card">
+          <table><thead><tr><th>Код</th><th>Бонус</th><th>Активаций</th><th>Лимит</th><th>Статус</th><th>Действия</th></tr></thead>
+          <tbody id="pt"></tbody></table>
+          <div id="pe" class="empty" style="display:none">Нет промокодов</div>
+        </div>
+      </div>
+
+      <div id="broadcast" class="sec">
+        <div class="card">
+          <h3>&#128226; Массовая рассылка</h3>
+          <div class="fg"><label>Текст сообщения</label><textarea id="bt" placeholder="Введите текст для рассылки..."></textarea></div>
+          <div class="fg"><label>Кнопка (опционально)</label><input type="text" id="bb" placeholder="Текст кнопки"></div>
+          <div class="fg"><label>URL кнопки (опционально)</label><input type="text" id="bu" placeholder="https://..."></div>
+          <button class="btn btn-primary" onclick="sendB()" style="width:auto">&#128232; Отправить всем</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div id="cpm" class="modal">
+    <div class="mc">
+      <div class="mh"><h3>&#127915; Новый промокод</h3><button class="mx" onclick="document.getElementById('cpm').classList.remove('on')">&times;</button></div>
+      <div class="fg"><label>Код промокода</label><input type="text" id="pc" placeholder="БОНУС100" style="text-transform:uppercase"></div>
+      <div class="fg"><label>Бонус (монеты)</label><input type="number" id="pb" value="100" min="1"></div>
+      <div class="fg"><label>Лимит активаций</label><input type="number" id="pl" value="100" min="1"></div>
+      <button class="btn btn-success" onclick="createP()">Создать</button>
+    </div>
+  </div>
+
+  <div id="bom" class="modal">
+    <div class="mc">
+      <div class="mh"><h3>&#128176; Выдать бонус</h3><button class="mx" onclick="document.getElementById('bom').classList.remove('on')">&times;</button></div>
+      <p id="bun" style="margin-bottom:16px;color:var(--muted)"></p>
+      <div class="fg"><label>Количество монет</label><input type="number" id="ba" value="100" min="1"></div>
+      <div class="fg"><label>Причина</label><input type="text" id="br" placeholder="Бонус от админа"></div>
+      <button class="btn btn-success" onclick="giveB()">Выдать</button>
+    </div>
+  </div>
+
+  <script>
+    const A=window.location.origin;let tk=localStorage.getItem('atk'),aU=[],aP=[],bUid=null;
+    if(tk)vToken();
+    async function doLogin(){const p=document.getElementById('pw').value;if(!p)return toast('Введите пароль',1);try{const r=await fetch(`${A}/api/admin/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({password:p})});const d=await r.json();if(d.success){tk=d.token;localStorage.setItem('atk',tk);showDash()}else toast('Неверный пароль',1)}catch(e){toast('Ошибка',1)}}
+    function doLogout(){tk=null;localStorage.removeItem('atk');document.getElementById('dash').style.display='none';document.getElementById('loginPage').style.display='flex'}
+    async function vToken(){try{const r=await fetch(`${A}/api/admin/stats`,{headers:{Authorization:`Bearer ${tk}`}});if(r.ok)showDash();else doLogout()}catch(e){doLogout()}}
+    function showDash(){document.getElementById('loginPage').style.display='none';document.getElementById('dash').style.display='block';loadS();loadU();loadP()}
+    function show(id,el){document.querySelectorAll('.sec').forEach(s=>s.classList.remove('on'));document.getElementById(id).classList.add('on');document.querySelectorAll('.nav button').forEach(b=>b.classList.remove('on'));el.classList.add('on')}
+    async function loadS(){try{const r=await fetch(`${A}/api/admin/stats`,{headers:{Authorization:`Bearer ${tk}`}});const d=await r.json();document.getElementById('s1').textContent=d.totalUsers||0;document.getElementById('s2').textContent=d.totalSpins||0;document.getElementById('s3').textContent=d.totalBets||0;document.getElementById('s4').textContent=d.totalWinnings||0;document.getElementById('s5').textContent=(d.totalBets-d.totalWinnings)||0;document.getElementById('s6').textContent=d.bannedUsers||0}catch(e){}}
+    async function loadU(){try{const r=await fetch(`${A}/api/admin/users`,{headers:{Authorization:`Bearer ${tk}`}});aU=await r.json();renderU(aU)}catch(e){}}
+    function renderU(u){const t=document.getElementById('ut'),e=document.getElementById('ue');if(!u.length){t.innerHTML='';e.style.display='block';return}e.style.display='none';t.innerHTML=u.map(x=>`<tr><td>${x.id}</td><td>${x.firstName||'Unknown'}</td><td>&#128176; ${x.balance}</td><td>${x.spins}</td><td>${x.banned?'<span class="badge br">Забанен</span>':'<span class="badge bg">Активен</span>'}</td><td class="acts"><button class="btn btn-success btn-sm" onclick="showB(${x.id},'${x.firstName||'User'}')">&#128176;</button>${x.banned?`<button class="btn btn-warning btn-sm" onclick="unbanU(${x.id})">&#128275;</button>`:`<button class="btn btn-danger btn-sm" onclick="banU(${x.id})">&#128274;</button>`}</td></tr>`).join('')}
+    function filterU(){const q=document.getElementById('us').value.toLowerCase();renderU(aU.filter(x=>String(x.id).includes(q)||(x.firstName||'').toLowerCase().includes(q)))}
+    async function banU(id){if(!confirm('Забанить?'))return;await fetch(`${A}/api/admin/users/${id}/ban`,{method:'POST',headers:{Authorization:`Bearer ${tk}`}});toast('Забанен');loadU();loadS()}
+    async function unbanU(id){await fetch(`${A}/api/admin/users/${id}/unban`,{method:'POST',headers:{Authorization:`Bearer ${tk}`}});toast('Разбанен');loadU();loadS()}
+    function showB(id,n){bUid=id;document.getElementById('bun').textContent=`${n} (ID: ${id})`;document.getElementById('bom').classList.add('on')}
+    async function giveB(){const amt=parseInt(document.getElementById('ba').value),reason=document.getElementById('br').value||'Бонус';try{const r=await fetch(`${A}/api/admin/users/${bUid}/bonus`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${tk}`},body:JSON.stringify({amount:amt,reason})});const d=await r.json();if(d.success){toast(`Выдано ${amt} монет`);document.getElementById('bom').classList.remove('on');loadU()}else toast(d.error||'Ошибка',1)}catch(e){toast('Ошибка',1)}}
+    async function loadP(){try{const r=await fetch(`${A}/api/admin/promos`,{headers:{Authorization:`Bearer ${tk}`}});aP=await r.json();renderP(aP)}catch(e){}}
+    function renderP(p){const t=document.getElementById('pt'),e=document.getElementById('pe');if(!p.length){t.innerHTML='';e.style.display='block';return}e.style.display='none';t.innerHTML=p.map(x=>`<tr><td><strong>${x.code}</strong></td><td>&#128176; ${x.bonus}</td><td>${x.used}</td><td>${x.limit}</td><td>${x.active?'<span class="badge bg">Активен</span>':'<span class="badge br">Выкл</span>'}</td><td class="acts"><button class="btn btn-sm" style="background:var(--input)" onclick="togP('${x.code}')">${x.active?'&#128308; Выкл':'&#128994; Вкл'}</button><button class="btn btn-danger btn-sm" onclick="delP('${x.code}')">&#128465;</button></td></tr>`).join('')}
+    async function createP(){const c=document.getElementById('pc').value.toUpperCase(),b=parseInt(document.getElementById('pb').value),l=parseInt(document.getElementById('pl').value);if(!c)return toast('Введите код',1);try{const r=await fetch(`${A}/api/admin/promos`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${tk}`},body:JSON.stringify({code:c,bonus:b,limit:l})});const d=await r.json();if(d.success){toast('Создан');document.getElementById('cpm').classList.remove('on');loadP()}else toast(d.error||'Ошибка',1)}catch(e){toast('Ошибка',1)}}
+    async function togP(c){await fetch(`${A}/api/admin/promos/${c}/toggle`,{method:'POST',headers:{Authorization:`Bearer ${tk}`}});loadP()}
+    async function delP(c){if(!confirm(`Удалить ${c}?`))return;await fetch(`${A}/api/admin/promos/${c}`,{method:'DELETE',headers:{Authorization:`Bearer ${tk}`}});toast('Удалён');loadP()}
+    async function sendB(){const t=document.getElementById('bt').value;if(!t)return toast('Введите текст',1);if(!confirm('Отправить ВСЕМ?'))return;try{const r=await fetch(`${A}/api/admin/broadcast`,{method:'POST',headers:{'Content-Type':'application/json',Authorization:`Bearer ${tk}`},body:JSON.stringify({text:t,button:document.getElementById('bb').value||null,buttonUrl:document.getElementById('bu').value||null})});const d=await r.json();if(d.success){toast(`Отправлено: ${d.sent} из ${d.total}`);document.getElementById('bt').value='';document.getElementById('bb').value='';document.getElementById('bu').value=''}else toast(d.error||'Ошибка',1)}catch(e){toast('Ошибка',1)}}
+    function toast(m,e=0){const t=document.createElement('div');t.className='toast'+(e?' err':'');t.textContent=m;document.body.appendChild(t);setTimeout(()=>t.remove(),3000)}
+  </script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: casino-bot
+    runtime: node
+    plan: free
+    buildCommand: cd bot && npm install && cd .. && npm install && npm run build
+    startCommand: cd bot && node server.js
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: PORT
+        value: 3000
+      - key: WEBAPP_URL
+        generateValue: false
