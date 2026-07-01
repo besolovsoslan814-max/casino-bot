@@ -2,9 +2,10 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-COPY requirements.txt .
+# Build context is repo root, so reference telegram-bot/ explicitly
+COPY telegram-bot/requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY telegram-bot/ .
 
 CMD ["python", "main.py"]
