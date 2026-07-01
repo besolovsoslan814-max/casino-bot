@@ -1,0 +1,7 @@
+[build]
+dockerfilePath = "telegram-bot/Dockerfile"
+watchPatterns = ["telegram-bot/**"]
+
+[deploy]
+startCommand = "python main.py"
+restartPolicyType = "always"
